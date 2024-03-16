@@ -1,14 +1,19 @@
 """
 @Desc: 全局配置文件读取
 """
-import argparse
+
 import os
 import shutil
 from typing import Dict, List
 
+import torch
 import yaml
 
-from common.log import logger
+from style_bert_vits2.logging import logger
+
+
+# If not cuda available, set possible devices to cpu
+cuda_available = torch.cuda.is_available()
 
 
 class Resample_config:
@@ -44,13 +49,23 @@ class Preprocess_text_config:
         max_val_total: int = 10000,
         clean: bool = True,
     ):
-        self.transcription_path: str = transcription_path  # 原始文本文件路径，文本格式应为{wav_path}|{speaker_name}|{language}|{text}。
-        self.cleaned_path: str = cleaned_path  # 数据清洗后文本路径，可以不填。不填则将在原始文本目录生成
-        self.train_path: str = train_path  # 训练集路径，可以不填。不填则将在原始文本目录生成
-        self.val_path: str = val_path  # 验证集路径，可以不填。不填则将在原始文本目录生成
+        self.transcription_path: str = (
+            transcription_path  # 原始文本文件路径，文本格式应为{wav_path}|{speaker_name}|{language}|{text}。
+        )
+        self.cleaned_path: str = (
+            cleaned_path  # 数据清洗后文本路径，可以不填。不填则将在原始文本目录生成
+        )
+        self.train_path: str = (
+            train_path  # 训练集路径，可以不填。不填则将在原始文本目录生成
+        )
+        self.val_path: str = (
+            val_path  # 验证集路径，可以不填。不填则将在原始文本目录生成
+        )
         self.config_path: str = config_path  # 配置文件路径
         self.val_per_lang: int = val_per_lang  # 每个speaker的验证集条数
-        self.max_val_total: int = max_val_total  # 验证集最大条数，多于的会被截断并放到训练集中
+        self.max_val_total: int = (
+            max_val_total  # 验证集最大条数，多于的会被截断并放到训练集中
+        )
         self.clean: bool = clean  # 是否进行数据清洗
 
     @classmethod
@@ -77,12 +92,14 @@ class Bert_gen_config:
     def __init__(
         self,
         config_path: str,
-        num_processes: int = 2,
+        num_processes: int = 1,
         device: str = "cuda",
         use_multi_device: bool = False,
     ):
         self.config_path = config_path
         self.num_processes = num_processes
+        if not cuda_available:
+            device = "cpu"
         self.device = device
         self.use_multi_device = use_multi_device
 
@@ -104,6 +121,8 @@ class Style_gen_config:
     ):
         self.config_path = config_path
         self.num_processes = num_processes
+        if not cuda_available:
+            device = "cpu"
         self.device = device
 
     @classmethod
@@ -143,7 +162,7 @@ class Train_ms_config:
 
 
 class Webui_config:
-    """webui 配置"""
+    """webui 配置 (for webui.py, not supported now)"""
 
     def __init__(
         self,
@@ -155,6 +174,8 @@ class Webui_config:
         share: bool = False,
         debug: bool = False,
     ):
+        if not cuda_available:
+            device = "cpu"
         self.device: str = device
         self.model: str = model  # 端口号
         self.config_path: str = config_path  # 是否公开部署，对外网开放
@@ -182,6 +203,8 @@ class Server_config:
         origins: List[str] = None,
     ):
         self.port: int = port
+        if not cuda_available:
+            device = "cpu"
         self.device: str = device
         self.language: str = language
         self.limit: int = limit
@@ -215,7 +238,7 @@ class Config:
                 "If you have no special needs, please do not modify default_config.yml."
             )
             # sys.exit(0)
-        with open(file=config_path, mode="r", encoding="utf-8") as file:
+        with open(config_path, "r", encoding="utf-8") as file:
             yaml_config: Dict[str, any] = yaml.safe_load(file.read())
             model_name: str = yaml_config["model_name"]
             self.model_name: str = model_name

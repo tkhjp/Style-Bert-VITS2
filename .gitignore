@@ -1,8 +1,13 @@
-.vscode/
-
 __pycache__/
 venv/
+.venv/
+dist/
+.coverage
 .ipynb_checkpoints/
+.ruff_cache/
+
+/Data/
+/model_assets/
 
 /*.yml
 !/default_config.yml
@@ -25,3 +30,10 @@ venv/
 *.csv
 *.bak
 /mos_results/
+
+safetensors.ipynb
+*.wav
+/static/
+
+# pyopenjtalk's dictionary
+*.dic
