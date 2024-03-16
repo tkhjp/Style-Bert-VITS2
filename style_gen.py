@@ -16,7 +16,7 @@ from pyannote.audio import Inference, Model
 
 model = Model.from_pretrained("pyannote/wespeaker-voxceleb-resnet34-LM")
 inference = Inference(model, window="whole")
-device = torch.device(config.style_gen_config.device)
+device = torch.device('cpu')
 inference.to(device)
 
 

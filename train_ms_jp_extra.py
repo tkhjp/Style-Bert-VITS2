@@ -105,7 +105,7 @@ def run():
         )
     )
 
-    backend = "nccl"
+    backend = "gloo"
     if platform.system() == "Windows":
         backend = "gloo"  # If Windows,switch to gloo backend.
     dist.init_process_group(
@@ -161,7 +161,7 @@ def run():
         )
 
     torch.manual_seed(hps.train.seed)
-    torch.cuda.set_device(local_rank)
+    # torch.cuda.set_device(local_rank)
 
     global global_step
     if rank == 0:
@@ -225,7 +225,7 @@ def run():
             3,
             0.1,
             gin_channels=hps.model.gin_channels if hps.data.n_speakers != 0 else 0,
-        ).cuda(local_rank)
+        )
     else:
         net_dur_disc = None
     if (
@@ -234,7 +234,7 @@ def run():
     ):
         net_wd = WavLMDiscriminator(
             hps.model.slm.hidden, hps.model.slm.nlayers, hps.model.slm.initial_channel
-        ).cuda(local_rank)
+        )
     else:
         net_wd = None
     if (
@@ -256,7 +256,7 @@ def run():
         mas_noise_scale_initial=mas_noise_scale_initial,
         noise_scale_delta=noise_scale_delta,
         **hps.model,
-    ).cuda(local_rank)
+    )
     if getattr(hps.train, "freeze_JP_bert", False):
         logger.info("Freezing (JP) bert encoder !!!")
         for param in net_g.enc_p.bert_proj.parameters():
@@ -266,7 +266,7 @@ def run():
         for param in net_g.enc_p.style_proj.parameters():
             param.requires_grad = False
 
-    net_d = MultiPeriodDiscriminator(hps.model.use_spectral_norm).cuda(local_rank)
+    net_d = MultiPeriodDiscriminator(hps.model.use_spectral_norm)
     optim_g = torch.optim.AdamW(
         filter(lambda p: p.requires_grad, net_g.parameters()),
         hps.train.learning_rate,
@@ -297,8 +297,8 @@ def run():
         )
     else:
         optim_wd = None
-    net_g = DDP(net_g, device_ids=[local_rank], bucket_cap_mb=512)
-    net_d = DDP(net_d, device_ids=[local_rank], bucket_cap_mb=512)
+    net_g = DDP(net_g)
+    net_d = DDP(net_d)
     if net_dur_disc is not None:
         net_dur_disc = DDP(
             net_dur_disc,
@@ -306,7 +306,7 @@ def run():
             bucket_cap_mb=512,
         )
     if net_wd is not None:
-        net_wd = DDP(net_wd, device_ids=[local_rank], bucket_cap_mb=512)
+        net_wd = DDP(net_wd)
 
     if utils.is_resuming(model_dir):
         if net_dur_disc is not None:
@@ -597,20 +597,29 @@ def train_and_evaluate(
                 - net_g.module.noise_scale_delta * global_step
             )
             net_g.module.current_mas_noise_scale = max(current_mas_noise_scale, 0.0)
-        x, x_lengths = x.cuda(local_rank, non_blocking=True), x_lengths.cuda(
-            local_rank, non_blocking=True
-        )
-        spec, spec_lengths = spec.cuda(
-            local_rank, non_blocking=True
-        ), spec_lengths.cuda(local_rank, non_blocking=True)
-        y, y_lengths = y.cuda(local_rank, non_blocking=True), y_lengths.cuda(
-            local_rank, non_blocking=True
-        )
-        speakers = speakers.cuda(local_rank, non_blocking=True)
-        tone = tone.cuda(local_rank, non_blocking=True)
-        language = language.cuda(local_rank, non_blocking=True)
-        bert = bert.cuda(local_rank, non_blocking=True)
-        style_vec = style_vec.cuda(local_rank, non_blocking=True)
+        # x, x_lengths = x.cuda(local_rank, non_blocking=True), x_lengths.cuda(
+        #     local_rank, non_blocking=True
+        # )
+        # spec, spec_lengths = spec.cuda(
+        #     local_rank, non_blocking=True
+        # ), spec_lengths.cuda(local_rank, non_blocking=True)
+        # y, y_lengths = y.cuda(local_rank, non_blocking=True), y_lengths.cuda(
+        #     local_rank, non_blocking=True
+        # )
+        # speakers = speakers.cuda(local_rank, non_blocking=True)
+        # tone = tone.cuda(local_rank, non_blocking=True)
+        # language = language.cuda(local_rank, non_blocking=True)
+        # bert = bert.cuda(local_rank, non_blocking=True)
+        # style_vec = style_vec.cuda(local_rank, non_blocking=True)
+            
+        x, x_lengths = x.to("cpu"), x_lengths.to("cpu")
+        spec, spec_lengths = spec.to("cpu"), spec_lengths.to("cpu")
+        y, y_lengths = y.to("cpu"), y_lengths.to("cpu")
+        speakers = speakers.to("cpu")
+        tone = tone.to("cpu")
+        language = language.to("cpu")
+        bert = bert.to("cpu")
+        style_vec = style_vec.to("cpu")
 
         with autocast(enabled=hps.train.bf16_run, dtype=torch.bfloat16):
             (

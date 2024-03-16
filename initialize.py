@@ -100,7 +100,7 @@ download_slm_model()
 
 download_pretrained_models()
 
-download_jp_extra_pretrained_models()
+# download_jp_extra_pretrained_models()
 
 if not args.skip_jvnv:
     download_jvnv_models()

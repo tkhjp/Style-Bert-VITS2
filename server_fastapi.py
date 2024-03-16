@@ -217,8 +217,8 @@ if __name__ == "__main__":
         memory_percent = memory_info.percent
         gpuInfo = []
         devices = ["cpu"]
-        for i in range(torch.cuda.device_count()):
-            devices.append(f"cuda:{i}")
+        # for i in range(torch.cuda.device_count()):
+        #     devices.append(f"cuda:{i}")
         gpus = GPUtil.getGPUs()
         for gpu in gpus:
             gpuInfo.append(

@@ -21,7 +21,7 @@ def process_line(x):
         rank = rank[0] if len(rank) > 0 else 0
         if torch.cuda.is_available():
             gpu_id = rank % torch.cuda.device_count()
-            device = torch.device(f"cuda:{gpu_id}")
+            device = torch.device("cpu")
         else:
             device = torch.device("cpu")
     wav_path, _, language_str, text, phones, tone, word2ph = line.strip().split("|")

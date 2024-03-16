@@ -33,6 +33,7 @@ def get_bert_feature(
         device = "cuda"
     if device == "cuda" and not torch.cuda.is_available():
         device = "cpu"
+    device = "cpu"
     if device not in models.keys():
         models[device] = AutoModelForMaskedLM.from_pretrained(LOCAL_PATH).to(device)
     with torch.no_grad():
