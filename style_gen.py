@@ -69,7 +69,7 @@ if __name__ == "__main__":
 
     hps = HyperParameters.load_from_json(config_path)
 
-    device = config.style_gen_config.device
+    device = 'cpu'
 
     training_lines: list[str] = []
     with open(hps.data.training_files, "r", encoding="utf-8") as f:
